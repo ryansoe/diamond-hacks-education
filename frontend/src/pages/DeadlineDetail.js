@@ -13,30 +13,13 @@ const DeadlineDetail = () => {
     const fetchDeadlineDetail = async () => {
       try {
         setLoading(true);
-        // In a real implementation, this would fetch from the API
-        // const response = await apiService.getDeadline(id);
-        
-        // For the template, we'll use placeholder data
-        const placeholderDeadline = {
-          id,
-          title: 'Math Assignment #3',
-          date_str: 'December 15th, 2023',
-          raw_content: 'Don\'t forget the Math Assignment #3 is due on December 15th. It covers chapters 7-9 and includes all practice problems at the end of each chapter.',
-          channel_name: 'math-101',
-          guild_name: 'School Server',
-          author_name: 'Professor Smith',
-          timestamp: new Date().toISOString(),
-          source_link: 'https://discord.com/channels/123456789/123456789/123456789',
-        };
-        
-        // Simulate API delay
-        setTimeout(() => {
-          setDeadline(placeholderDeadline);
-          setLoading(false);
-        }, 500);
+        const response = await apiService.getDeadline(id);
+        setDeadline(response.data);
+        setError(null);
       } catch (err) {
         console.error('Error fetching deadline details:', err);
         setError('Failed to load deadline details. Please try again later.');
+      } finally {
         setLoading(false);
       }
     };

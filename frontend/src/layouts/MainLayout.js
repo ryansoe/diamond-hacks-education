@@ -1,35 +1,24 @@
 import React, { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Bars3Icon, 
   XMarkIcon, 
   CalendarIcon, 
-  HomeIcon, 
-  ClockIcon, 
-  UserIcon,
-  Cog6ToothIcon
+  HomeIcon,
+  Cog6ToothIcon,
+  UserIcon
 } from '@heroicons/react/24/outline';
 
 const MainLayout = () => {
-  const { user, isAdmin, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
   
   const navigation = [
     { name: 'Dashboard', href: '/', icon: HomeIcon },
     { name: 'Calendar', href: '/calendar', icon: CalendarIcon },
-    { name: 'Admin Panel', href: '/admin', icon: Cog6ToothIcon, adminOnly: true }
+    { name: 'Admin Panel', href: '/admin', icon: Cog6ToothIcon }
   ];
-  
-  const filteredNavigation = navigation.filter(
-    item => !item.adminOnly || (item.adminOnly && isAdmin)
-  );
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-100">
@@ -61,7 +50,7 @@ const MainLayout = () => {
           
           <div className="mt-5 flex-1 h-0 overflow-y-auto">
             <nav className="px-2 space-y-1">
-              {filteredNavigation.map((item) => (
+              {navigation.map((item) => (
                 <NavLink
                   key={item.name}
                   to={item.href}
@@ -94,7 +83,7 @@ const MainLayout = () => {
             </div>
             <div className="flex-1 flex flex-col overflow-y-auto">
               <nav className="flex-1 px-2 py-4 bg-primary-700 space-y-1">
-                {filteredNavigation.map((item) => (
+                {navigation.map((item) => (
                   <NavLink
                     key={item.name}
                     to={item.href}
@@ -132,14 +121,8 @@ const MainLayout = () => {
           <div className="flex-1 px-4 flex justify-end">
             <div className="ml-4 flex items-center md:ml-6">
               <div className="flex items-center space-x-4">
-                <span className="text-gray-700">{user ? user.username : 'User'}</span>
+                <span className="text-gray-700">{user ? user.username : 'Guest'}</span>
                 <UserIcon className="h-6 w-6 text-gray-400" />
-                <button
-                  onClick={handleLogout}
-                  className="text-sm font-medium text-primary-600 hover:text-primary-800"
-                >
-                  Logout
-                </button>
               </div>
             </div>
           </div>

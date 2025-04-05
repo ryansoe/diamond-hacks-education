@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
-import { format, parseISO } from 'date-fns';
 import { ClockIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 
 const Dashboard = () => {
@@ -17,72 +16,12 @@ const Dashboard = () => {
     const fetchDeadlines = async () => {
       try {
         setLoading(true);
-        // In a real implementation, you would pass filters to the API
         const response = await apiService.getDeadlines();
-        
-        // For the template, we'll use some placeholder data if the API returns empty
-        const data = response.data.deadlines.length > 0 
-          ? response.data.deadlines
-          : [
-              {
-                id: '1',
-                title: 'Math Assignment #3',
-                date_str: 'December 15th, 2023',
-                channel_name: 'math-101',
-                guild_name: 'School Server',
-                timestamp: new Date().toISOString(),
-              },
-              {
-                id: '2',
-                title: 'Physics Lab Report',
-                date_str: 'December 10th, 2023',
-                channel_name: 'physics-202',
-                guild_name: 'School Server',
-                timestamp: new Date().toISOString(),
-              },
-              {
-                id: '3',
-                title: 'Term Paper Outline',
-                date_str: 'December 20th, 2023',
-                channel_name: 'english-comp',
-                guild_name: 'School Server',
-                timestamp: new Date().toISOString(),
-              },
-            ];
-        
-        setDeadlines(data);
+        setDeadlines(response.data.deadlines);
         setError(null);
       } catch (err) {
         console.error('Error fetching deadlines:', err);
         setError('Failed to load deadlines. Please try again later.');
-        
-        // For the template, use placeholder data even when there's an error
-        setDeadlines([
-          {
-            id: '1',
-            title: 'Math Assignment #3',
-            date_str: 'December 15th, 2023',
-            channel_name: 'math-101',
-            guild_name: 'School Server',
-            timestamp: new Date().toISOString(),
-          },
-          {
-            id: '2',
-            title: 'Physics Lab Report',
-            date_str: 'December 10th, 2023',
-            channel_name: 'physics-202',
-            guild_name: 'School Server',
-            timestamp: new Date().toISOString(),
-          },
-          {
-            id: '3',
-            title: 'Term Paper Outline',
-            date_str: 'December 20th, 2023',
-            channel_name: 'english-comp',
-            guild_name: 'School Server',
-            timestamp: new Date().toISOString(),
-          },
-        ]);
       } finally {
         setLoading(false);
       }

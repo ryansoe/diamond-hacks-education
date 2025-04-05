@@ -6,84 +6,32 @@ const AuthContext = createContext();
 
 // Auth provider component
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Default user state - automatically authenticated
+  const [user, setUser] = useState({ username: 'Guest User' });
+  const [isAuthenticated, setIsAuthenticated] = useState(true); // Auto-authenticated
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // No loading since we're auto-authenticating
   
-  // Check if user is already logged in (on app load)
+  // Set up API default headers
   useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem('token');
-      
-      if (token) {
-        try {
-          // Set the token in axios headers
-          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-          
-          // For the template, we'll just assume the token is valid
-          // In a real app, you'd verify the token with the backend
-          setIsAuthenticated(true);
-          
-          // Set user and admin status
-          // This is a placeholder - in a real app, you'd get user info from the API
-          setUser({ username: 'user' });
-          setIsAdmin(localStorage.getItem('isAdmin') === 'true');
-        } catch (error) {
-          console.error('Error verifying auth token:', error);
-          localStorage.removeItem('token');
-          localStorage.removeItem('isAdmin');
-        }
-      }
-      
-      setLoading(false);
-    };
-    
-    checkAuth();
+    // For API calls, we'll use a default token for now
+    // In a real app, you would implement proper authentication
+    const defaultToken = 'guest-access-token';
+    api.defaults.headers.common['Authorization'] = `Bearer ${defaultToken}`;
   }, []);
   
-  // Login function
+  // This login function is kept for future implementation
   const login = async (username, password) => {
-    try {
-      const response = await api.post('/token', { username, password });
-      const { access_token } = response.data;
-      
-      // Save token to localStorage
-      localStorage.setItem('token', access_token);
-      
-      // Set the token in axios headers
-      api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-      
-      // Set authenticated state
-      setIsAuthenticated(true);
-      
-      // Set user
-      setUser({ username });
-      
-      // Check if admin (in a real app, this would come from the backend)
-      const isAdminUser = username === 'admin';
-      setIsAdmin(isAdminUser);
-      localStorage.setItem('isAdmin', isAdminUser);
-      
-      return true;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
-    }
+    // In a real implementation, you'd validate credentials with the backend
+    setUser({ username });
+    setIsAdmin(username === 'admin');
+    return true;
   };
   
-  // Logout function
+  // This logout function is kept for future implementation
   const logout = () => {
-    // Remove token from localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('isAdmin');
-    
-    // Remove token from axios headers
-    delete api.defaults.headers.common['Authorization'];
-    
-    // Reset state
-    setIsAuthenticated(false);
-    setUser(null);
+    // In a real implementation, you'd clear auth state
+    setUser({ username: 'Guest User' });
     setIsAdmin(false);
   };
   
@@ -99,7 +47,7 @@ export const AuthProvider = ({ children }) => {
   
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

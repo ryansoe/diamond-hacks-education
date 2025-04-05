@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
@@ -8,34 +8,23 @@ import MainLayout from './layouts/MainLayout';
 
 // Page components
 import Dashboard from './pages/Dashboard';
-import Login from './pages/Login';
 import Calendar from './pages/Calendar';
 import DeadlineDetail from './pages/DeadlineDetail';
 import NotFound from './pages/NotFound';
 import AdminPanel from './pages/AdminPanel';
 
-// Protected route component
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  return children;
-};
-
 // Admin route component
 const AdminRoute = ({ children }) => {
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  // For now, we'll just render the admin component regardless
+  // When you implement full authentication, you can uncomment this condition
   
+  /*
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
+  */
   
   return children;
 };
@@ -43,20 +32,13 @@ const AdminRoute = ({ children }) => {
 function App() {
   return (
     <Routes>
-      {/* Public routes */}
-      <Route path="/login" element={<Login />} />
-
-      {/* Protected routes */}
-      <Route path="/" element={
-        <ProtectedRoute>
-          <MainLayout />
-        </ProtectedRoute>
-      }>
+      {/* Main routes - no login required */}
+      <Route path="/" element={<MainLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="calendar" element={<Calendar />} />
         <Route path="deadlines/:id" element={<DeadlineDetail />} />
         
-        {/* Admin routes */}
+        {/* Admin route - still using the AdminRoute component for future use */}
         <Route path="admin" element={
           <AdminRoute>
             <AdminPanel />
