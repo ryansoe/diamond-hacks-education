@@ -1,66 +1,107 @@
 # School Deadline Tracker
 
-A web application with a Discord bot that automatically scrapes important deadlines and dates from school Discord servers, then presents them in an organized dashboard.
+A comprehensive solution for tracking school deadlines, featuring a Discord bot that detects deadlines in conversations and a web app for viewing and managing them.
 
-## Project Structure
+## Components
 
-- `bot/` - Discord bot for scraping deadline information
-- `backend/` - API server for processing and storing data
-- `frontend/` - React web interface for viewing deadlines
-- `database/` - Database models and connection utilities
+The system consists of three main components:
 
-## Technology Stack
-
-- **Backend**: Python with discord.py and FastAPI
-- **Database**: MongoDB
-- **Frontend**: React with Tailwind CSS
+1. **Discord Bot**: Monitors Discord channels for mentions of deadlines and assignments
+2. **Backend API**: FastAPI server that stores and provides deadline data
+3. **Frontend**: React web application for viewing and managing deadlines
 
 ## Setup Instructions
 
-### Prerequisites
+### Environment Variables
 
-- Python 3.8+
-- Node.js 14+
-- MongoDB
+Create a `.env` file in the root directory with the following variables:
 
-### Discord Bot Setup
+```
+# Discord Bot
+DISCORD_TOKEN=your_discord_bot_token
+GUILD_IDS=comma,separated,guild,ids
 
-1. Create a Discord application at https://discord.com/developers/applications
-2. Create a bot for your application and copy the token
-3. Add the bot to your server with the required permissions
-4. Copy `.env.example` to `.env` and add your Discord bot token
+# API Configuration
+API_HOST=0.0.0.0
+API_PORT=8000
+CORS_ORIGINS=http://localhost:3000
+
+# MongoDB Configuration
+MONGO_URI=mongodb://localhost:27017
+MONGO_DB_NAME=deadline_tracker
+
+# Bot to API Integration
+API_URL=http://localhost:8000
+BOT_API_KEY=your_secret_api_key
+```
 
 ### Backend Setup
 
-```bash
-cd backend
-pip install -r requirements.txt
-python main.py
-```
+1. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+
+2. Start MongoDB:
+   ```
+   mongod --dbpath /path/to/data/directory
+   ```
+
+3. Run the backend server:
+   ```
+   python -m backend.main
+   ```
+
+### Discord Bot Setup
+
+1. Create a bot on the [Discord Developer Portal](https://discord.com/developers/applications)
+2. Add the bot to your server with the necessary permissions
+3. Set the `DISCORD_TOKEN` in your `.env` file
+4. Run the bot:
+   ```
+   python -m bot.main
+   ```
 
 ### Frontend Setup
 
-```bash
-cd frontend
-npm install
-npm start
-```
+1. Navigate to the frontend directory:
+   ```
+   cd frontend
+   ```
+
+2. Install dependencies:
+   ```
+   npm install
+   ```
+
+3. Start the development server:
+   ```
+   npm start
+   ```
+
+## Integration Between Bot and Backend
+
+The Discord bot now directly communicates with the backend API to share deadline information:
+
+1. The bot detects deadlines in Discord messages using regex patterns
+2. It extracts important information like course, title, description, and due date
+3. The data is stored locally in MongoDB for redundancy
+4. The bot also sends the deadline data to the backend API via HTTP POST
+5. The backend has a special `/bot/deadlines` endpoint that accepts this data
+6. Authentication is handled via a shared API key
+
+### Integration Configuration
+
+- `API_URL`: URL where the backend is running (default: http://localhost:8000)
+- `BOT_API_KEY`: Secret key for authenticating the bot with the API
 
 ## Features
 
-- Discord bot to automatically scrape deadline information
-- Data processing and storage in MongoDB
-- User dashboard to view deadlines in list and calendar formats
-- Filtering and search functionality
-- Optional email notifications
-- Admin panel for data management
+- Automatic deadline detection from Discord messages
+- Secure API for storing and retrieving deadline information
+- Web interface for viewing deadlines
+- Authentication system for accessing sensitive data
 
-## Development
+## Contributing
 
-This project template is designed for your team to start implementing the full functionality. Key areas to focus on:
-
-1. Implementing the Discord message scanning logic
-2. Building the data extraction and processing pipeline
-3. Developing the frontend dashboard views
-4. Creating the notification system
-5. Building the admin controls 
+Please fork the repository and submit a pull request for any improvements 

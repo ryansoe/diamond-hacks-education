@@ -1,7 +1,7 @@
 import os
 import sys
 import uvicorn
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Body
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from database.mongodb_client import MongoDBClient
-from backend.models import DeadlineResponse, DeadlineList, UserLogin, Token
+from backend.models import DeadlineResponse, DeadlineList, UserLogin, Token, DeadlineCreate
 from backend.auth import create_access_token, get_current_user
 
 # Load environment variables
@@ -19,6 +19,7 @@ load_dotenv()
 API_HOST = os.getenv('API_HOST', '0.0.0.0')
 API_PORT = int(os.getenv('API_PORT', '8000'))
 CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:3000').split(',')
+BOT_API_KEY = os.getenv('BOT_API_KEY', 'your_bot_api_key_here')
 
 # Create FastAPI app
 app = FastAPI(
@@ -105,6 +106,42 @@ async def get_deadline(
     deadline["id"] = str(deadline.pop("_id"))
     
     return deadline
+
+
+@app.post("/bot/deadlines", status_code=status.HTTP_201_CREATED)
+async def create_deadline(
+    deadline: DeadlineCreate = Body(...),
+    api_key: str = Body(...)
+):
+    """Create a new deadline from the Discord bot
+    
+    Args:
+        deadline: Deadline information
+        api_key: API key for authorization
+    
+    Returns:
+        Created deadline ID
+    """
+    # Validate API key
+    if api_key != BOT_API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API key"
+        )
+    
+    # Convert to dict for MongoDB
+    deadline_data = deadline.dict()
+    
+    # Save to database
+    deadline_id = db_client.save_deadline(deadline_data)
+    
+    if not deadline_id:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save deadline"
+        )
+    
+    return {"id": deadline_id, "message": "Deadline created successfully"}
 
 
 @app.post("/token", response_model=Token)

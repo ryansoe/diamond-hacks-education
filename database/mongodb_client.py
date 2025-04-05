@@ -107,4 +107,12 @@ class MongoDBClient:
         """Close the MongoDB connection"""
         if self.client:
             self.client.close()
-            logger.info("Closed MongoDB connection") 
+            logger.info("Closed MongoDB connection")
+    
+    def test_connection(self):
+        """Test connection to MongoDB and return server info"""
+        try:
+            server_info = self.client.server_info()
+            return server_info
+        except Exception as e:
+            raise Exception(f"Failed to connect to MongoDB: {e}") 

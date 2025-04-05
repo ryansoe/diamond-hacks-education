@@ -20,6 +20,17 @@ class TokenData(BaseModel):
     username: Optional[str] = None
 
 
+class DeadlineCreate(BaseModel):
+    """Model for creating a new deadline from the bot"""
+    course: str
+    title: str
+    description: Optional[str] = None
+    due_date: datetime
+    link: Optional[str] = None
+    category: Optional[str] = "assignment"
+    source: Optional[str] = "discord_bot"
+
+
 class DeadlineResponse(BaseModel):
     """Deadline response model"""
     id: str
