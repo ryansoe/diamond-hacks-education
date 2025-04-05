@@ -5,7 +5,12 @@ import logging
 from dotenv import load_dotenv
 from discord.ext import commands
 from datetime import datetime
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from database.mongodb_client import MongoDBClient
+
 
 # Configure logging
 logging.basicConfig(
@@ -49,6 +54,9 @@ async def on_ready():
     
     for guild in bot.guilds:
         logger.info(f'Connected to {guild.name} (id: {guild.id})')
+    
+    general_channel = bot.get_channel(1358156201208315958)
+    await general_channel.send("bot just started")
 
 
 @bot.event
@@ -60,6 +68,11 @@ async def on_message(message):
     
     # Process commands
     await bot.process_commands(message)
+
+    if("announcement" in message.channel.name):
+        general_channel = bot.get_channel(1358156201208315958)
+        await general_channel.send(message.content + "\n\n## This message came from " + message.guild.name)
+        await general_channel.send()
     
     # Only process messages from monitored guilds
     if not GUILD_IDS or str(message.guild.id) in GUILD_IDS:
