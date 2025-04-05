@@ -10,6 +10,23 @@ const api = axios.create({
   },
 });
 
+const formatDateString = (dateStr) => {
+  // Remove ordinal suffixes like "st", "nd", "rd", "th"
+  const cleanedDateStr = dateStr.replace(/(\d+)(st|nd|rd|th)/, '$1'); 
+  const dateObj = new Date(cleanedDateStr);
+  
+  if (isNaN(dateObj.getTime())) {
+    return null; 
+  }
+
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0'); 
+  const day = String(dateObj.getDate() +1).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+};
+
+
 // API service methods with mock data for the template
 const apiService = {
   // Deadlines
@@ -26,26 +43,26 @@ const apiService = {
             {
               id: '1',
               title: 'Math Assignment #3',
-              date_str: 'December 15th, 2023',
+              date_str: 'April 15th, 2025',
               channel_name: 'math-101',
               guild_name: 'School Server',
-              timestamp: new Date().toISOString(),
+              timestamp: formatDateString('April 15th, 2025'),
             },
             {
               id: '2',
               title: 'Physics Lab Report',
-              date_str: 'December 10th, 2023',
+              date_str: 'April 10th, 2025',
               channel_name: 'physics-202',
               guild_name: 'School Server',
-              timestamp: new Date().toISOString(),
+              timestamp: formatDateString('April 29th, 2025'),
             },
             {
               id: '3',
               title: 'Term Paper Outline',
-              date_str: 'December 20th, 2023',
+              date_str: 'April 20th, 2025',
               channel_name: 'english-comp',
               guild_name: 'School Server',
-              timestamp: new Date().toISOString(),
+              timestamp: formatDateString('April 20th, 2025'),
             },
           ],
           total: 3,

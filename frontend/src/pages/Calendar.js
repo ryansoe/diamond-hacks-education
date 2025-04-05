@@ -43,6 +43,7 @@ const Calendar = () => {
   const getDayDeadlines = (day) => {
     return deadlines.filter(deadline => {
       const deadlineDate = new Date(deadline.timestamp);
+      console.log("timestamp: ", deadline.timestamp);
       return deadlineDate.getDate() === day.getDate() &&
              deadlineDate.getMonth() === day.getMonth() &&
              deadlineDate.getFullYear() === day.getFullYear();

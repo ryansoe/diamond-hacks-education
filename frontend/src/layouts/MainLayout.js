@@ -91,7 +91,7 @@ const MainLayout = () => {
                       `${
                         isActive
                           ? 'bg-primary-800 text-white'
-                          : 'text-primary-100 hover:bg-primary-600'
+                          : 'text-primary-100 hover:bg-primary-600' 
                       } group flex items-center px-2 py-2 text-sm font-medium rounded-md`
                     }
                   >
