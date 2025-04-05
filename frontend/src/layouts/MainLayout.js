@@ -17,7 +17,7 @@ const MainLayout = () => {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: HomeIcon },
     { name: 'Calendar', href: '/calendar', icon: CalendarIcon },
-    { name: 'Admin Panel', href: '/admin', icon: Cog6ToothIcon }
+    // { name: 'Admin Panel', href: '/admin', icon: Cog6ToothIcon }
   ];
 
   return (
@@ -121,8 +121,6 @@ const MainLayout = () => {
           <div className="flex-1 px-4 flex justify-end">
             <div className="ml-4 flex items-center md:ml-6">
               <div className="flex items-center space-x-4">
-                <span className="text-gray-700">{user ? user.username : 'Guest'}</span>
-                <UserIcon className="h-6 w-6 text-gray-400" />
               </div>
             </div>
           </div>

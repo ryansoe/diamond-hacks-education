@@ -11,13 +11,12 @@ import Dashboard from './pages/Dashboard';
 import Calendar from './pages/Calendar';
 import DeadlineDetail from './pages/DeadlineDetail';
 import NotFound from './pages/NotFound';
-import AdminPanel from './pages/AdminPanel';
 
 // Admin route component
 const AdminRoute = ({ children }) => {
   const { isAdmin } = useAuth();
   
-  // For now, we'll just render the admin component regardless
+  // For now, we'll just render the component regardless
   // When you implement full authentication, you can uncomment this condition
   
   /*
@@ -38,12 +37,11 @@ function App() {
         <Route path="calendar" element={<Calendar />} />
         <Route path="deadlines/:id" element={<DeadlineDetail />} />
         
-        {/* Admin route - still using the AdminRoute component for future use */}
+        {/* Admin route - still using the AdminRoute component for future use
         <Route path="admin" element={
           <AdminRoute>
-            <AdminPanel />
           </AdminRoute>
-        } />
+        } /> */}
       </Route>
       
       {/* 404 route */}

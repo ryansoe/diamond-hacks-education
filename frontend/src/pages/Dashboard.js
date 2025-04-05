@@ -49,7 +49,7 @@ const Dashboard = () => {
     <div className="container mx-auto px-4">
       <div className="pb-5 border-b border-gray-200 sm:flex sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold leading-tight text-gray-900">
-          Upcoming Deadlines
+          Upcoming Tasks
         </h2>
         <div className="mt-3 sm:mt-0 sm:ml-4">
           <div className="flex rounded-md shadow-sm">
