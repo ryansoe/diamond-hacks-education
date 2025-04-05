@@ -3,7 +3,8 @@ import discord
 import re
 import logging
 import requests
-from dotenv import load_dotenv
+import time
+from dotenv import load_dotenv, find_dotenv
 from discord.ext import commands
 from datetime import datetime, timedelta
 import sys
@@ -11,6 +12,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from database.mongodb_client import MongoDBClient
+from bot.gemini_processor import init_gemini, extract_deadline_with_fallback
 
 
 # Configure logging
@@ -24,12 +26,23 @@ logging.basicConfig(
 )
 logger = logging.getLogger('deadline-bot')
 
-# Load environment variables
-load_dotenv()
+# Load environment variables with explicit file path
+dotenv_path = find_dotenv()
+logger.info(f"Loading environment variables from: {dotenv_path}")
+load_dotenv(dotenv_path)
+
+# Get configuration from environment variables
 TOKEN = os.getenv('DISCORD_TOKEN')
-GUILD_IDS = os.getenv('GUILD_IDS', '').split(',')
+logger.info(f"Token found: {'Yes' if TOKEN else 'No'} (First 5 chars: {TOKEN[:5] if TOKEN else 'None'}... Length: {len(TOKEN) if TOKEN else 0})")
+
+# Fix GUILD_IDS parsing to handle empty string properly
+guild_ids_str = os.getenv('GUILD_IDS', '')
+GUILD_IDS = [gid.strip() for gid in guild_ids_str.split(',') if gid.strip()]
+logger.info(f"Guild IDs monitoring: {GUILD_IDS if GUILD_IDS else 'ALL GUILDS'}")
+
 API_URL = os.getenv('API_URL', 'http://localhost:8000')
 BOT_API_KEY = os.getenv('BOT_API_KEY', 'your_bot_api_key_here')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 # Initialize bot with intents
 intents = discord.Intents.default()
@@ -41,14 +54,15 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 # Initialize database client
 db_client = MongoDBClient()
 
-# Deadline detection patterns
+# Flag to track if Gemini is available
+gemini_available = False
+
+# Legacy deadline detection patterns (kept as fallback)
 deadline_patterns = [
     r'due\s+(?:on|by)?\s+(\w+\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)',
     r'deadline[: ]\s*(\w+\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)',
     r'submit\s+(?:before|by)?\s+(\w+\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)',
-    # New pattern to match "REMINDER: Project proposal deadline: December 1st"
     r'REMINDER:.*?deadline:?\s*(\w+\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)',
-    # More general pattern to catch various formats
     r'([A-Z][a-z]+\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)'
 ]
 
@@ -88,102 +102,74 @@ async def on_message(message):
         except Exception as e:
             logger.error(f"Error forwarding announcement: {e}")
     
-    # Only process messages from monitored guilds
+    # Process messages from all guilds if GUILD_IDS is empty,
+    # otherwise only process from specific guilds
     if not GUILD_IDS or str(message.guild.id) in GUILD_IDS:
+        logger.info(f"Processing message from guild: {message.guild.name} (ID: {message.guild.id})")
         await process_message_for_deadlines(message)
+    else:
+        logger.debug(f"Skipping message from unmonitored guild: {message.guild.name} (ID: {message.guild.id})")
 
 
 async def process_message_for_deadlines(message):
-    """Process a message to extract deadline information"""
+    """Process a message to extract event information using Gemini AI"""
     content = message.content
-    logger.info(f"Processing message for deadlines: '{content[:50]}...' in channel '{message.channel.name}'")
+    logger.info(f"Processing message for events: '{content[:50]}...' in channel '{message.channel.name}'")
     
     # Check if it's in a monitored guild
     if GUILD_IDS and str(message.guild.id) not in GUILD_IDS:
         logger.info(f"Skipping message - guild {message.guild.id} is not in monitored guilds: {GUILD_IDS}")
         return
     
-    # Extract deadline information
-    deadline_found = False
-    for pattern in deadline_patterns:
-        matches = re.search(pattern, content, re.IGNORECASE)
-        if matches:
-            deadline_found = True
-            # Extract deadline date from the match
-            deadline_date_str = matches.group(1)
-            
-            # Extract event title/description
-            title = extract_title(content)
-            
-            # Extract course name from channel name
-            course = extract_course_from_channel(message.channel.name)
-            
-            # Log the detected deadline
-            logger.info(f"Detected deadline: {title} due on {deadline_date_str}")
-            
-            # Parse deadline date
-            try:
-                # Try to parse the date string into a datetime object
-                # This is a simple approach - in production, you'd want more robust date parsing
-                due_date = parse_date_string(deadline_date_str)
-                
-                # Store in database
-                deadline_data = {
-                    "title": title,
-                    "course": course,
-                    "description": content[:500],  # Truncate long descriptions
-                    "due_date": due_date,
-                    "date_str": deadline_date_str,
-                    "raw_content": content,
-                    "channel_name": message.channel.name,
-                    "guild_name": message.guild.name,
-                    "message_id": message.id,
-                    "author_id": message.author.id,
-                    "author_name": str(message.author),
-                    "timestamp": datetime.now(),
-                    "link": message.jump_url,
-                    "source": "discord_bot",
-                    "category": "assignment"
-                }
-                
-                # Attempt to save to database with better error handling
-                try:
-                    db_client.save_deadline(deadline_data)
-                    logger.info(f"Successfully saved deadline to local MongoDB")
-                    
-                    # Reply to the message if deadline was detected and saved
-                    await message.reply(f"✅ I've tracked this deadline: **{title}** due on **{deadline_date_str}**")
-                    
-                except Exception as db_error:
-                    logger.error(f"Failed to save to MongoDB: {db_error}")
-                    # Notify the user there was an issue
-                    await message.reply(f"⚠️ Detected deadline: **{title}** due on **{deadline_date_str}**, but couldn't save it (MongoDB connection issue)")
-                
-                # Try to send to backend API
-                try:
-                    send_deadline_to_api(deadline_data)
-                except Exception as api_error:
-                    logger.error(f"Failed to send to API independently: {api_error}")
-                
-            except Exception as e:
-                logger.error(f"Error processing deadline: {e}")
-                logger.exception("Full traceback:")
-            
-            break
+    # Prepare message info for Gemini
+    message_info = {
+        "channel_name": message.channel.name,
+        "guild_name": message.guild.name,
+        "message_id": str(message.id),
+        "author_id": str(message.author.id),
+        "author_name": str(message.author),
+        "link": message.jump_url,
+    }
     
-    if not deadline_found:
-        # Debug why the pattern didn't match
-        logger.info(f"No deadline found in message. Testing patterns individually:")
-        for i, pattern in enumerate(deadline_patterns):
-            logger.info(f"Pattern {i+1}: {pattern}")
-            if re.search(pattern, content, re.IGNORECASE):
-                logger.info(f"  - Pattern {i+1} matched, but full processing failed")
+    # Try to extract event with Gemini AI (with fallback to regex if needed)
+    event_found, event_data = extract_deadline_with_fallback(content, message_info)
+    
+    if event_found and event_data:
+        date_str = event_data.get('date_str', 'unknown date')
+        title = event_data.get('title', 'Untitled Event')
+        category = event_data.get('category', 'event')
+        
+        logger.info(f"Detected {category}: {title} on {date_str}")
+        
+        try:
+            # Save to database
+            db_client.save_deadline(event_data)
+            logger.info(f"Successfully saved event to local MongoDB")
+            
+            # Reply to the message if event was detected and saved
+            if category == 'deadline':
+                reply_msg = f"✅ I've tracked this deadline: **{title}** due on **{date_str}**"
             else:
-                logger.info(f"  - Pattern {i+1} did not match")
+                reply_msg = f"✅ I've tracked this {category}: **{title}** on **{date_str}**"
+                
+            await message.reply(reply_msg)
+            
+        except Exception as db_error:
+            logger.error(f"Failed to save to MongoDB: {db_error}")
+            # Notify the user there was an issue
+            await message.reply(f"⚠️ Detected {category}: **{title}** on **{date_str}**, but couldn't save it (MongoDB connection issue)")
+        
+        # Try to send to backend API
+        try:
+            send_deadline_to_api(event_data)
+        except Exception as api_error:
+            logger.error(f"Failed to send to API independently: {api_error}")
+    else:
+        logger.info("No event detected in message")
 
 
 def extract_title(content):
-    """Extract a title from the message content"""
+    """Extract a title from the message content (legacy function kept for compatibility)"""
     # Simple extraction: first sentence or first 50 characters
     title = content.split('.')[0]
     if len(title) > 50:
@@ -192,7 +178,7 @@ def extract_title(content):
 
 
 def extract_course_from_channel(channel_name):
-    """Extract course name from the channel name"""
+    """Extract course name from the channel name (legacy function kept for compatibility)"""
     # Simple approach - in production, you'd want more robust course extraction
     if '-' in channel_name:
         parts = channel_name.split('-')
@@ -201,7 +187,7 @@ def extract_course_from_channel(channel_name):
 
 
 def parse_date_string(date_str):
-    """Parse a date string into a datetime object"""
+    """Parse a date string into a datetime object (legacy function kept for compatibility)"""
     try:
         # Add current year if not specified
         if not re.search(r'\d{4}', date_str):
@@ -222,40 +208,61 @@ def parse_date_string(date_str):
         return datetime.now() + timedelta(days=7)
 
 
-def send_deadline_to_api(deadline_data):
-    """Send deadline data to the backend API"""
+def send_deadline_to_api(event_data):
+    """Send event data to the backend API"""
     try:
+        # Verify we have an API key and URL
+        if not BOT_API_KEY or BOT_API_KEY == "your_bot_api_key_here":
+            logger.error("Missing or default BOT_API_KEY - cannot send to API. Check your .env file.")
+            return
+            
         # Create API-compatible data structure
         api_data = {
-            "course": deadline_data["course"],
-            "title": deadline_data["title"],
-            "description": deadline_data["description"],
-            "due_date": deadline_data["due_date"].isoformat(),
-            "link": deadline_data["link"],
-            "category": deadline_data["category"],
-            "source": deadline_data["source"]
+            "course": event_data.get("course", ""),
+            "club": event_data.get("club", event_data.get("course", "")),  # Use club field if available
+            "title": event_data.get("title", ""),
+            "description": event_data.get("description", ""),
+            "due_date": event_data["due_date"].isoformat() if isinstance(event_data.get("due_date"), datetime) else event_data.get("due_date", ""),
+            "link": event_data.get("link", ""),
+            "location": event_data.get("location", ""),
+            "time": event_data.get("time", ""),
+            "category": event_data.get("category", "event"),
+            "source": event_data.get("source", "discord_bot"),
+            # Ensure message_id is always included
+            "message_id": event_data.get("message_id", f"msg_{int(time.time())}")
         }
         
         # Include API key for authorization
         payload = {
-            "deadline": api_data,
+            "deadline": api_data,  # Keep as "deadline" for backward compatibility with API
             "api_key": BOT_API_KEY
         }
+        
+        # Better log output before sending
+        logger.info(f"Sending event to API at: {API_URL}/bot/deadlines")
+        logger.debug(f"API data: {api_data}")
         
         # Send POST request to API
         response = requests.post(
             f"{API_URL}/bot/deadlines",
-            json=payload
+            json=payload,
+            timeout=10  # Add a timeout to prevent hanging
         )
         
         # Check response
         if response.status_code == 201:
-            logger.info(f"Successfully sent deadline to API: {response.json()}")
+            logger.info(f"Successfully sent event to API: {response.json()}")
+        elif response.status_code == 401:
+            logger.error(f"API Key rejected (401): {response.text}")
+            logger.error(f"Please check that BOT_API_KEY matches between bot and backend .env files")
         else:
-            logger.error(f"Failed to send deadline to API: {response.status_code} - {response.text}")
+            logger.error(f"Failed to send event to API: {response.status_code} - {response.text}")
             
+    except requests.RequestException as re:
+        logger.error(f"Network error sending event to API: {re}")
+        logger.error(f"Please check that the backend API is running at {API_URL}")
     except Exception as e:
-        logger.error(f"Error sending deadline to API: {e}")
+        logger.error(f"Error sending event to API: {e}")
 
 
 @bot.command(name='deadlines')
@@ -268,30 +275,68 @@ async def list_deadlines(ctx):
 async def help_command(ctx):
     """Display help information"""
     help_text = """
-**Deadline Tracker Bot Commands**
-`!deadlines` - List upcoming deadlines
+**Club Announcement Tracker Bot Commands**
+`!deadlines` - List upcoming deadlines and events
 `!help_bot` - Display this help message
 
-This bot automatically detects and tracks deadlines mentioned in conversations.
+This bot automatically detects and tracks:
+• Club events and meetings
+• Application and registration deadlines 
+• General club announcements
+• Important dates and times
     """
     await ctx.send(help_text)
 
 
 def main():
     """Main function to start the bot"""
+    global gemini_available
+    
+    # Better token validation
     if not TOKEN:
         logger.error("No Discord token found. Please set the DISCORD_TOKEN environment variable.")
+        logger.error("Make sure your .env file exists and contains DISCORD_TOKEN=your_token_here")
+        logger.error("No quotes, no spaces around the equals sign.")
         return
     
-    # Check MongoDB connection before starting
+    # Validate token format
+    if len(TOKEN) < 50 or " " in TOKEN or TOKEN.startswith('"') or TOKEN.startswith("'"):
+        logger.error("Discord token appears malformed.")
+        logger.error("Token should be ~59-70 characters without quotes or spaces.")
+        logger.error("Please check your .env file format and token value.")
+        return
+    
+    # Explicitly test MongoDB Atlas connection
     try:
+        # Get MongoDB URI for troubleshooting
+        mongodb_uri = os.getenv('MONGODB_URI')
+        if not mongodb_uri:
+            logger.error("MONGODB_URI not found in environment variables!")
+            logger.error("Please ensure your .env file contains the MongoDB Atlas connection string")
+            logger.error("Should start with: mongodb+srv://")
+        else:
+            logger.info(f"Found MongoDB URI starting with: {mongodb_uri[:15]}...")
+        
         # Test connection by getting server info
         db_info = db_client.test_connection()
-        logger.info(f"Successfully connected to MongoDB: {db_info}")
+        logger.info(f"Successfully connected to MongoDB Atlas: {db_info}")
     except Exception as e:
         logger.error(f"Failed to connect to MongoDB: {e}")
-        logger.error("Please make sure MongoDB is running with: mongod --dbpath /path/to/data/directory")
+        logger.error("If using MongoDB Atlas, please check:")
+        logger.error("1. The connection string is correct in your .env file")
+        logger.error("2. Your username, password, and network access are properly configured")
+        logger.error("3. You've whitelisted your IP address in MongoDB Atlas network settings")
         # Continue anyway to allow Discord functionality
+    
+    # Initialize Gemini AI
+    if GEMINI_API_KEY:
+        gemini_available = init_gemini(GEMINI_API_KEY)
+        if gemini_available:
+            logger.info("Gemini AI initialized successfully")
+        else:
+            logger.warning("Failed to initialize Gemini AI - will fall back to regex patterns")
+    else:
+        logger.warning("No GEMINI_API_KEY found in environment variables - will fall back to regex patterns")
     
     # Check API connection
     try:
