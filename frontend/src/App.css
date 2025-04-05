@@ -1,6 +1,6 @@
 /* Loader animation */
 .loader {
-  border-top-color: #3F83F8;
+  border-top-color: #62b6ff;
   -webkit-animation: spinner 1.5s linear infinite;
   animation: spinner 1.5s linear infinite;
 }
