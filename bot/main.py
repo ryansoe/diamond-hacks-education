@@ -71,7 +71,8 @@ async def on_message(message):
 
     if("announcement" in message.channel.name):
         general_channel = bot.get_channel(1358156201208315958)
-        await general_channel.send(message.content)
+        await general_channel.send(message.content + "\n\n## This message came from " + message.guild.name)
+        await general_channel.send()
     
     # Only process messages from monitored guilds
     if not GUILD_IDS or str(message.guild.id) in GUILD_IDS:
