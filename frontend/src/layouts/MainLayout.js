@@ -45,7 +45,7 @@ const MainLayout = () => {
           </div>
           
           <div className="flex-shrink-0 flex items-center px-4">
-            <h1 className="text-white text-xl font-bold">Deadline Tracker</h1>
+            <h1 className="text-white text-xl font-bold">Discord Task Tracker</h1>
           </div>
           
           <div className="mt-5 flex-1 h-0 overflow-y-auto">
@@ -79,7 +79,7 @@ const MainLayout = () => {
         <div className="flex flex-col w-64">
           <div className="flex flex-col h-0 flex-1">
             <div className="flex items-center h-16 flex-shrink-0 px-4 " style={{ backgroundColor: "#7c3aed" }}>
-              <h1 className="text-white text-xl font-bold" >Deadline Tracker</h1>
+              <h1 className="text-white text-xl font-bold" >Discord Task Tracker</h1>
             </div>
             <div className="flex-1 flex flex-col overflow-y-auto">
               <nav className="flex-1 px-2 py-4 space-y-1" style={{ backgroundColor: "#7c3aed" }}>

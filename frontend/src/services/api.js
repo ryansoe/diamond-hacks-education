@@ -64,6 +64,14 @@ const apiService = {
               guild_name: 'School Server',
               timestamp: formatDateString('April 20th, 2025'),
             },
+            {
+              id: '4',
+              title: 'ACM Club Meeting',
+              date_str: 'May 2nd, 2025',
+              channel_name: 'announcements',
+              guild_name: 'ACM UCSD',
+              timestamp: formatDateString('May 2nd, 2025'),
+            },
           ],
           total: 3,
           skip: 0,
@@ -82,7 +90,7 @@ const apiService = {
       // Return mock data for the specific ID
       return {
         data: {
-          id,
+          id, 
           title: 'Math Assignment #3',
           date_str: 'December 15th, 2023',
           raw_content: 'Don\'t forget the Math Assignment #3 is due on December 15th. It covers chapters 7-9 and includes all practice problems at the end of each chapter.',
