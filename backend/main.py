@@ -1,0 +1,144 @@
+import os
+import sys
+import uvicorn
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+# Add parent directory to path to import database module
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from database.mongodb_client import MongoDBClient
+from backend.models import DeadlineResponse, DeadlineList, UserLogin, Token
+from backend.auth import create_access_token, get_current_user
+
+# Load environment variables
+load_dotenv()
+
+# Get API configuration from environment variables
+API_HOST = os.getenv('API_HOST', '0.0.0.0')
+API_PORT = int(os.getenv('API_PORT', '8000'))
+CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:3000').split(',')
+
+# Create FastAPI app
+app = FastAPI(
+    title="School Deadline Tracker API",
+    description="API for accessing and managing school deadlines",
+    version="0.1.0"
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Initialize MongoDB client
+db_client = MongoDBClient()
+
+
+@app.get("/")
+async def root():
+    """Root endpoint to check if the API is running"""
+    return {"message": "School Deadline Tracker API is running"}
+
+
+@app.get("/deadlines", response_model=DeadlineList)
+async def get_deadlines(
+    skip: int = 0,
+    limit: int = 10,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get a list of deadlines
+    
+    Args:
+        skip: Number of records to skip
+        limit: Maximum number of records to return
+        current_user: Current authenticated user
+    
+    Returns:
+        List of deadlines
+    """
+    deadlines = db_client.get_deadlines(limit=limit, skip=skip)
+    
+    # Convert MongoDB documents to API models
+    deadline_list = []
+    for d in deadlines:
+        # Convert MongoDB _id to string
+        d["id"] = str(d.pop("_id"))
+        deadline_list.append(d)
+    
+    return {
+        "deadlines": deadline_list,
+        "total": len(deadline_list),
+        "skip": skip,
+        "limit": limit
+    }
+
+
+@app.get("/deadlines/{deadline_id}", response_model=DeadlineResponse)
+async def get_deadline(
+    deadline_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get a specific deadline by ID
+    
+    Args:
+        deadline_id: ID of the deadline to retrieve
+        current_user: Current authenticated user
+    
+    Returns:
+        Deadline details
+    """
+    deadline = db_client.get_deadline_by_id(deadline_id)
+    
+    if not deadline:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Deadline not found"
+        )
+    
+    # Convert MongoDB _id to string
+    deadline["id"] = str(deadline.pop("_id"))
+    
+    return deadline
+
+
+@app.post("/token", response_model=Token)
+async def login_for_access_token(user: UserLogin):
+    """Login endpoint to get JWT token
+    
+    Args:
+        user: User login credentials
+    
+    Returns:
+        JWT access token
+    """
+    # This is a placeholder - in a real app, you would validate against a user database
+    if user.username != "admin" or user.password != "password":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    access_token = create_access_token(data={"sub": user.username})
+    
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+def main():
+    """Run the FastAPI application with Uvicorn"""
+    uvicorn.run(
+        "backend.main:app",
+        host=API_HOST,
+        port=API_PORT,
+        reload=True
+    )
+
+
+if __name__ == "__main__":
+    main() 
