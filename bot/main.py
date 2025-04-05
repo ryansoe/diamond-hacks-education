@@ -5,7 +5,12 @@ import logging
 from dotenv import load_dotenv
 from discord.ext import commands
 from datetime import datetime
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from database.mongodb_client import MongoDBClient
+
 
 # Configure logging
 logging.basicConfig(
