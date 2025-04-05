@@ -42,7 +42,7 @@ const apiService = {
           deadlines: [
             {
               id: '1',
-              title: 'Math Assignment #3',
+              title: 'software engineering internship oppurtunity',
               date_str: 'April 15th, 2025',
               channel_name: 'math-101',
               guild_name: 'School Server',
@@ -50,7 +50,7 @@ const apiService = {
             },
             {
               id: '2',
-              title: 'Physics Lab Report',
+              title: 'ACM Projects meeting',
               date_str: 'April 10th, 2025',
               channel_name: 'physics-202',
               guild_name: 'School Server',
@@ -58,7 +58,7 @@ const apiService = {
             },
             {
               id: '3',
-              title: 'Term Paper Outline',
+              title: 'scholarship oppurtunity',
               date_str: 'April 20th, 2025',
               channel_name: 'english-comp',
               guild_name: 'School Server',
@@ -67,6 +67,14 @@ const apiService = {
             {
               id: '4',
               title: 'ACM Club Meeting',
+              date_str: 'May 2nd, 2025',
+              channel_name: 'announcements',
+              guild_name: 'ACM UCSD',
+              timestamp: formatDateString('May 2nd, 2025'),
+            },
+            {
+              id: '5',
+              title: 'Nursing Internship ',
               date_str: 'May 2nd, 2025',
               channel_name: 'announcements',
               guild_name: 'ACM UCSD',

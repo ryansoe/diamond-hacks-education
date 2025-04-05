@@ -45,6 +45,15 @@ const Dashboard = () => {
       return 0;
     });
   
+
+    const clubEvents = filteredDeadlines.filter(d =>
+      /meeting|club|food/i.test(d.title)
+    );
+    
+    const academicEvents = filteredDeadlines.filter(d =>
+      /internship|hiring|scholarship/i.test(d.title)
+    );    
+
   return (
     <div className="container mx-auto px-4">
       <div className="pb-5 border-b border-gray-200 sm:flex sm:items-center sm:justify-between">
@@ -91,11 +100,11 @@ const Dashboard = () => {
         </div>
       ) : (
         <div className="mt-6 bg-white shadow overflow-hidden rounded-md">
-          <ul className="divide-y divide-gray-200">
-            {filteredDeadlines.length > 0 ? (
-              filteredDeadlines.map((deadline) => (
-                <li key={deadline.id}>
-                  <Link to={`/deadlines/${deadline.id}`} className="block hover:bg-gray-50">
+        <ul className="divide-y divide-gray-200">
+          {clubEvents.length > 0 ? (
+            clubEvents.map((deadline) => (
+              <li key={deadline.id}>
+                <Link to={`/deadlines/${deadline.id}`} className="block hover:bg-gray-50">
                     <div className="px-4 py-4 sm:px-6">
                       <div className="flex items-center justify-between">
                         <p className="text-lg font-medium text-primary-600 truncate">
@@ -122,21 +131,19 @@ const Dashboard = () => {
                       </div>
                     </div>
                   </Link>
-                </li>
-              ))
-            ) : (
-              <li className="px-4 py-4 sm:px-6 text-center text-gray-500">
-                No deadlines found matching your criteria.
               </li>
-            )}
-          </ul>
-        </div>
-      )}
-
-
+            ))
+          ) : (
+            <li className="px-4 py-4 sm:px-6 text-center text-gray-500">
+              No club events found.
+            </li>
+          )}
+        </ul>
+      </div>
+    )}
 
       <div className = "border-b pt-5 text-xl font-bold leading-tight text-gray-900">
-        <h2>Internship/Hiring Opportunities</h2>
+        <h2>Academic/Internship/Hiring Opportunities</h2>
       </div>
 
 
@@ -158,11 +165,11 @@ const Dashboard = () => {
         </div>
       ) : (
         <div className="mt-6 bg-white shadow overflow-hidden rounded-md">
-          <ul className="divide-y divide-gray-200">
-            {filteredDeadlines.length > 0 ? (
-              filteredDeadlines.map((deadline) => (
-                <li key={deadline.id}>
-                  <Link to={`/deadlines/${deadline.id}`} className="block hover:bg-gray-50">
+        <ul className="divide-y divide-gray-200">
+          {academicEvents.length > 0 ? (
+            academicEvents.map((deadline) => (
+              <li key={deadline.id}>
+                <Link to={`/deadlines/${deadline.id}`} className="block hover:bg-gray-50">
                     <div className="px-4 py-4 sm:px-6">
                       <div className="flex items-center justify-between">
                         <p className="text-lg font-medium text-primary-600 truncate">
@@ -189,17 +196,17 @@ const Dashboard = () => {
                       </div>
                     </div>
                   </Link>
-                </li>
-              ))
-            ) : (
-              <li className="px-4 py-4 sm:px-6 text-center text-gray-500">
-                No deadlines found matching your criteria.
               </li>
-            )}
-          </ul>
-        </div>
-      )}
-      
+            ))
+          ) : (
+            <li className="px-4 py-4 sm:px-6 text-center text-gray-500">
+              No academic events found.
+            </li>
+          )}
+        </ul>
+      </div>
+    )}
+    
     </div>
   );
 };
