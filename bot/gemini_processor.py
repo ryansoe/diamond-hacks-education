@@ -74,10 +74,18 @@ def detect_deadline(message_content: str, channel_name: str = None) -> Tuple[boo
           "category": "event/deadline/meeting/announcement"
         }
         
+        DATE EXTRACTION GUIDANCE:
+        - For specific dates, capture the full date expression (e.g., "April 15th, 2023")
+        - For relative dates:
+          - Use "today" for events happening on the current day
+          - Use "tomorrow" for events happening the next day
+          - For other relative dates, interpret them relative to the current date
+        - If a date has no year specified, assume it's for the current year
+        - If no specific date is mentioned but the event is clearly upcoming, use today's date
+        
         IMPORTANT:
         - Return only the JSON without any markdown formatting or code blocks
         - If no event or announcement is detected, return {"has_event": false}
-        - For dates, include the full date mentioned (e.g., "April 9th, 2025")
         - Extract any club name if present (e.g., "Chess Club", "ACM")
         - If the channel name contains club info, use it
         """
@@ -180,17 +188,57 @@ def format_deadline_data(
     Returns:
         Dictionary formatted for MongoDB storage
     """
+    # Get the current date for default and relative date handling
+    today = datetime.now()
+    
     # Attempt to parse the date string
     due_date = None
+    date_str = gemini_result.get("date_str", "")
+    standardized_date_str = ""
+    
     try:
-        # This is simplified - in production, use a more robust date parser
         from dateutil import parser
-        date_str = gemini_result.get("date_str", "")
+        
+        # Handle special cases
         if date_str:
-            due_date = parser.parse(date_str)
+            # Case: "today" - use current date
+            if re.search(r'\btoday\b', date_str.lower()):
+                due_date = today
+                standardized_date_str = today.strftime("%Y-%m-%d")
+            
+            # Case: "tomorrow" - use next day
+            elif re.search(r'\btomorrow\b', date_str.lower()):
+                from datetime import timedelta
+                due_date = today + timedelta(days=1)
+                standardized_date_str = due_date.strftime("%Y-%m-%d")
+            
+            # General case: try to parse the date
+            else:
+                # Handle dates without year
+                if not re.search(r'\b\d{4}\b', date_str):
+                    # Add current year and try parsing
+                    modified_date_str = f"{date_str}, {today.year}"
+                    try:
+                        due_date = parser.parse(modified_date_str)
+                    except:
+                        # If that fails, try original string
+                        due_date = parser.parse(date_str)
+                else:
+                    # Parse with year included
+                    due_date = parser.parse(date_str)
+                
+                if due_date:
+                    standardized_date_str = due_date.strftime("%Y-%m-%d")
+        
+        # Fallback: if no date or parsing failed, use today's date
+        if not due_date:
+            due_date = today
+            standardized_date_str = today.strftime("%Y-%m-%d")
+            
     except Exception as e:
         logger.error(f"Failed to parse date: {e}")
-        due_date = datetime.now()  # Fallback
+        due_date = today  # Fallback
+        standardized_date_str = today.strftime("%Y-%m-%d")
     
     # Use club from Gemini or fallback to channel name extraction
     club = gemini_result.get("club", "")
@@ -241,7 +289,7 @@ def format_deadline_data(
         "club": club,    # Add "club" field
         "description": description,
         "due_date": due_date,
-        "date_str": gemini_result.get("date_str", ""),
+        "date_str": standardized_date_str,  # Use the standardized date string
         "raw_content": message_content,
         "channel_name": message_info.get("channel_name", ""),
         "guild_name": message_info.get("guild_name", ""),
