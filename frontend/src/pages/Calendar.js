@@ -49,6 +49,35 @@ const Calendar = () => {
              deadlineDate.getFullYear() === day.getFullYear();
     });
   };
+
+
+  const [filters, setFilters] = useState({
+      search: '',
+      sort: 'date',
+  });
+
+  const filteredDeadlines = deadlines
+  .filter(deadline => 
+    deadline.title.toLowerCase().includes(filters.search.toLowerCase()) ||
+    deadline.date_str.toLowerCase().includes(filters.search.toLowerCase()) ||
+    deadline.channel_name.toLowerCase().includes(filters.search.toLowerCase())
+  )
+  .sort((a, b) => {
+    if (filters.sort === 'date') {
+      // Sort by date (this is a simplified example)
+      return a.date_str.localeCompare(b.date_str);
+    }
+    return 0;
+  });
+
+  const clubEvents = filteredDeadlines.filter(d =>
+    /meeting|club|event|food/i.test(d.title)
+  );
+  
+  const academicEvents = filteredDeadlines.filter(d =>
+    /internship|hiring|job|scholarship/i.test(d.title)
+  );    
+
   
   return (
     <div className="container mx-auto px-4">
@@ -118,15 +147,29 @@ const Calendar = () => {
                   
                   {dayDeadlines.length > 0 && (
                     <div className="mt-1">
-                      {dayDeadlines.map((deadline) => (
-                        <div
-                          key={deadline.id}
-                          className="text-xs p-1 mb-1 rounded bg-primary-100 text-primary-800 truncate"
-                          title={deadline.title}
-                        >
-                          {deadline.title}
-                        </div>
-                      ))}
+{dayDeadlines.map((deadline) => {
+  // Determine type of event
+  const isClub = /meeting|club|event|food/i.test(deadline.title);
+  const isAcademic = /internship|hiring|job|scholarship/i.test(deadline.title);
+
+  // Choose a color based on type
+  const bgColor = isClub
+    ? 'bg-red-100 text-red-800'
+    : isAcademic
+    ? 'bg-blue-100 text-blue-800'
+    : 'bg-gray-100 text-gray-800'; 
+
+  return (
+    <div
+      key={deadline.id}
+      className={`text-xs p-1 mb-1 rounded truncate ${bgColor}`}
+      title={deadline.title}
+    >
+      {deadline.title}
+    </div>
+  );
+})}
+
                     </div>
                   )}
                 </div>
