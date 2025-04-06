@@ -58,7 +58,7 @@ const Dashboard = () => {
   
 
     const clubEvents = filteredDeadlines.filter(d =>
-      d.title && /meeting|club|event|food/i.test(d.title)
+      d.title && /meeting|club|event|food|kickoff|social/i.test(d.title)
     );
     
     const academicEvents = filteredDeadlines.filter(d =>
