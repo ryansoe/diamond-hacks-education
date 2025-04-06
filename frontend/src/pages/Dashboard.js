@@ -41,13 +41,16 @@ const Dashboard = () => {
   // Filter and sort deadlines based on user selections
   const filteredDeadlines = deadlines
     .filter(deadline => 
-      deadline.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-      deadline.date_str.toLowerCase().includes(filters.search.toLowerCase()) ||
-      deadline.channel_name.toLowerCase().includes(filters.search.toLowerCase())
+      (deadline.title?.toLowerCase() || '').includes(filters.search.toLowerCase()) ||
+      (deadline.date_str?.toLowerCase() || '').includes(filters.search.toLowerCase()) ||
+      (deadline.channel_name?.toLowerCase() || '').includes(filters.search.toLowerCase())
     )
     .sort((a, b) => {
       if (filters.sort === 'date') {
-        // Sort by date (this is a simplified example)
+        // Sort by date with null/undefined checks
+        if (!a.date_str && !b.date_str) return 0;
+        if (!a.date_str) return 1;  // null values come last
+        if (!b.date_str) return -1;
         return a.date_str.localeCompare(b.date_str);
       }
       return 0;
@@ -55,11 +58,11 @@ const Dashboard = () => {
   
 
     const clubEvents = filteredDeadlines.filter(d =>
-      /meeting|club|event|social|ACM|food/i.test(d.title)
+      d.title && /meeting|club|event|food/i.test(d.title)
     );
     
     const academicEvents = filteredDeadlines.filter(d =>
-      /internship|hiring|job|academic|scholarship/i.test(d.title)
+      d.title && /internship|hiring|job|scholarship/i.test(d.title)
     );    
     
     const otherEvents = filteredDeadlines.filter(d =>
@@ -121,9 +124,9 @@ const Dashboard = () => {
             <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
               <p className="flex items-center">
                 <ClockIcon className="h-4 w-4 mr-1 text-indigo-400" />
-                {deadline.date_str}
+                {deadline.date_str || 'No date specified'}
               </p>
-              <p className="italic">From {deadline.guild_name}</p>
+              <p className="italic">From {deadline.guild_name || 'Unknown'}</p>
             </div>
           </li>
         ))}
@@ -164,9 +167,9 @@ const Dashboard = () => {
             <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
               <p className="flex items-center">
                 <ClockIcon className="h-4 w-4 mr-1 text-indigo-400" />
-                {deadline.date_str}
+                {deadline.date_str || 'No date specified'}
               </p>
-              <p className="italic">From {deadline.guild_name}</p>
+              <p className="italic">From {deadline.guild_name || 'Unknown'}</p>
             </div>
           </li>
         ))}
@@ -206,9 +209,9 @@ const Dashboard = () => {
           <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
             <p className="flex items-center">
               <ClockIcon className="h-4 w-4 mr-1 text-indigo-400" />
-              {deadline.date_str}
+              {deadline.date_str || 'No date specified'}
             </p>
-            <p className="italic">From {deadline.guild_name}</p>
+            <p className="italic">From {deadline.guild_name || 'Unknown'}</p>
           </div>
         </li>
       ))}
@@ -232,7 +235,7 @@ const Dashboard = () => {
         <p><strong>Message:</strong> {selectedDeadline.raw_content}</p>
         <p className="flex items-center mt-1">
           <ClockIcon className="h-4 w-4 mr-1 text-indigo-400" />
-          {selectedDeadline.date_str}
+          {selectedDeadline.date_str || 'No date specified'}
         </p>
       </div>
     </div>

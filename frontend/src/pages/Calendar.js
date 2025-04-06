@@ -42,6 +42,7 @@ const Calendar = () => {
   // Check if a day has deadlines
   const getDayDeadlines = (day) => {
     return deadlines.filter(deadline => {
+      if (!deadline.timestamp) return false;
       const deadlineDate = new Date(deadline.timestamp);
       // console.log("timestamp: ", deadline.timestamp);
       return deadlineDate.getDate() === day.getDate() &&
@@ -50,7 +51,6 @@ const Calendar = () => {
     });
   };
 
-
   const [filters, setFilters] = useState({
       search: '',
       sort: 'date',
@@ -58,13 +58,16 @@ const Calendar = () => {
 
   const filteredDeadlines = deadlines
   .filter(deadline => 
-    deadline.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-    deadline.date_str.toLowerCase().includes(filters.search.toLowerCase()) ||
-    deadline.channel_name.toLowerCase().includes(filters.search.toLowerCase())
+    (deadline.title?.toLowerCase() || '').includes(filters.search.toLowerCase()) ||
+    (deadline.date_str?.toLowerCase() || '').includes(filters.search.toLowerCase()) ||
+    (deadline.channel_name?.toLowerCase() || '').includes(filters.search.toLowerCase())
   )
   .sort((a, b) => {
     if (filters.sort === 'date') {
-      // Sort by date (this is a simplified example)
+      // Sort by date with null checks
+      if (!a.date_str && !b.date_str) return 0;
+      if (!a.date_str) return 1;  // null values come last
+      if (!b.date_str) return -1;
       return a.date_str.localeCompare(b.date_str);
     }
     return 0;
@@ -78,7 +81,6 @@ const Calendar = () => {
     /internship|hiring|job|scholarship/i.test(d.title)
   );    
 
-  
   return (
     <div className="container mx-auto px-4">
       <div className="pb-5 border-b border-gray-200 sm:flex sm:items-center sm:justify-between">
@@ -149,8 +151,8 @@ const Calendar = () => {
                     <div className="mt-1">
 {dayDeadlines.map((deadline) => {
   // Determine type of event
-  const isClub = /meeting|club|event|food/i.test(deadline.title);
-  const isAcademic = /internship|hiring|job|scholarship/i.test(deadline.title);
+  const isClub = deadline.title && /meeting|club|event|food/i.test(deadline.title);
+  const isAcademic = deadline.title && /internship|hiring|job|scholarship/i.test(deadline.title);
 
   // Choose a color based on type
   const bgColor = isClub
@@ -161,11 +163,11 @@ const Calendar = () => {
 
   return (
     <div
-      key={deadline.id}
+      key={deadline.id || Math.random().toString()}
       className={`text-xs p-1 mb-1 rounded truncate ${bgColor}`}
-      title={deadline.title}
+      title={deadline.title || 'No title'}
     >
-      {deadline.title}
+      {deadline.title || 'Untitled Event'}
     </div>
   );
 })}
