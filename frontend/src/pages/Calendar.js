@@ -42,12 +42,22 @@ const Calendar = () => {
   // Check if a day has deadlines
   const getDayDeadlines = (day) => {
     return deadlines.filter(deadline => {
-      if (!deadline.timestamp) return false;
-      const deadlineDate = new Date(deadline.date_str);
-      // console.log("timestamp: ", deadline.timestamp);
-      return deadlineDate.getDate() === day.getDate() &&
-             deadlineDate.getMonth() === day.getMonth() &&
-             deadlineDate.getFullYear() === day.getFullYear();
+      if (!deadline.date_str) return false;
+      
+      try {
+        // Properly parse the YYYY-MM-DD format without timezone issues
+        const [year, month, dayOfMonth] = deadline.date_str.split('-').map(Number);
+        
+        // JavaScript months are 0-indexed, so subtract 1 from the month
+        const deadlineDate = new Date(year, month - 1, dayOfMonth);
+        
+        return deadlineDate.getDate() === day.getDate() &&
+               deadlineDate.getMonth() === day.getMonth() &&
+               deadlineDate.getFullYear() === day.getFullYear();
+      } catch (e) {
+        console.error("Error parsing date:", deadline.date_str, e);
+        return false;
+      }
     });
   };
 
