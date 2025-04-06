@@ -135,10 +135,6 @@ const Calendar = () => {
           </div>
         </div>
       )}
-      
-      <div className="mt-8 text-center text-gray-500 text-sm">
-        <p>Calendar view is a placeholder. Your team will implement the full functionality.</p>
-      </div>
     </div>
   );
 };

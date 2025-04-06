@@ -3,6 +3,12 @@ import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { ClockIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 
+import {
+  UserGroupIcon,
+  AcademicCapIcon,
+} from "@heroicons/react/24/outline";
+
+
 const Dashboard = () => {
   const [deadlines, setDeadlines] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,11 +53,11 @@ const Dashboard = () => {
   
 
     const clubEvents = filteredDeadlines.filter(d =>
-      /meeting|club|food/i.test(d.title)
+      /meeting|club|event|food/i.test(d.title)
     );
     
     const academicEvents = filteredDeadlines.filter(d =>
-      /internship|hiring|scholarship/i.test(d.title)
+      /internship|hiring|job|scholarship/i.test(d.title)
     );    
 
   return (
@@ -75,139 +81,92 @@ const Dashboard = () => {
         </div>
       </div>
       
-      <div className = "border-b pt-5 text-xl font-bold leading-tight text-gray-900">
-        <h1>Club Events/Free Food</h1>
-      </div>
-
-
-
-
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="text-center">
-            <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 mx-auto"></div>
-            <h2 className="text-center text-gray-700 text-xl font-semibold">Loading...</h2>
-            <p className="text-center text-gray-500">This may take a few seconds</p>
-          </div>
-        </div>
-      ) : error ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="text-center">
-            <ExclamationCircleIcon className="mx-auto h-12 w-12 text-red-500" />
-            <h2 className="mt-2 text-center text-red-700 text-xl font-semibold">Error</h2>
-            <p className="mt-1 text-center text-gray-500">{error}</p>
-          </div>
-        </div>
-      ) : (
-        <div className="mt-6 bg-white shadow overflow-hidden rounded-md">
-        <ul className="divide-y divide-gray-200">
-          {clubEvents.length > 0 ? (
-            clubEvents.map((deadline) => (
-              <li key={deadline.id}>
-                <Link to={`/deadlines/${deadline.id}`} className="block hover:bg-gray-50">
-                    <div className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <p className="text-lg font-medium text-primary-600 truncate">
-                          {deadline.title}
-                        </p>
-                        <div className="ml-2 flex-shrink-0 flex">
-                          <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            {deadline.channel_name}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-2 sm:flex sm:justify-between">
-                        <div className="sm:flex">
-                          <p className="flex items-center text-sm text-gray-500">
-                            <ClockIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
-                            {deadline.date_str}
-                          </p>
-                        </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                          <p>
-                            From {deadline.guild_name}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-              </li>
-            ))
-          ) : (
-            <li className="px-4 py-4 sm:px-6 text-center text-gray-500">
-              No club events found.
-            </li>
-          )}
-        </ul>
-      </div>
-    )}
-
-      <div className = "border-b pt-5 text-xl font-bold leading-tight text-gray-900">
-        <h2>Academic/Internship/Hiring Opportunities</h2>
-      </div>
-
-
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="text-center">
-            <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 mx-auto"></div>
-            <h2 className="text-center text-gray-700 text-xl font-semibold">Loading...</h2>
-            <p className="text-center text-gray-500">This may take a few seconds</p>
-          </div>
-        </div>
-      ) : error ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="text-center">
-            <ExclamationCircleIcon className="mx-auto h-12 w-12 text-red-500" />
-            <h2 className="mt-2 text-center text-red-700 text-xl font-semibold">Error</h2>
-            <p className="mt-1 text-center text-gray-500">{error}</p>
-          </div>
-        </div>
-      ) : (
-        <div className="mt-6 bg-white shadow overflow-hidden rounded-md">
-        <ul className="divide-y divide-gray-200">
-          {academicEvents.length > 0 ? (
-            academicEvents.map((deadline) => (
-              <li key={deadline.id}>
-                <Link to={`/deadlines/${deadline.id}`} className="block hover:bg-gray-50">
-                    <div className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <p className="text-lg font-medium text-primary-600 truncate">
-                          {deadline.title}
-                        </p>
-                        <div className="ml-2 flex-shrink-0 flex">
-                          <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            {deadline.channel_name}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-2 sm:flex sm:justify-between">
-                        <div className="sm:flex">
-                          <p className="flex items-center text-sm text-gray-500">
-                            <ClockIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
-                            {deadline.date_str}
-                          </p>
-                        </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                          <p>
-                            From {deadline.guild_name}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-              </li>
-            ))
-          ) : (
-            <li className="px-4 py-4 sm:px-6 text-center text-gray-500">
-              No academic events found.
-            </li>
-          )}
-        </ul>
-      </div>
-    )}
-    
+      <div className="space-y-10 px-4 py-6 sm:px-8 ">
+        {/* Club Events Section */}
+  <section>
+    <div className="flex items-center gap-2 border-b pb-2">
+      <UserGroupIcon className="h-6 w-6 text-indigo-500" />
+      <h2 className="text-xl font-bold text-gray-800">
+        Club Events / Free Food
+      </h2>
     </div>
+
+    {clubEvents.length === 0 ? (
+      <div className="mt-4 text-gray-500 italic text-sm">No events currently</div>
+    ) : (
+      <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {clubEvents.map((deadline) => (
+          <li
+            key={deadline.id}
+            className="relative rounded-lg border bg-white p-5 shadow-sm transition hover:shadow-md"
+          >
+            <div className="flex justify-between items-start">
+              <h3 className="text-base font-semibold text-gray-800">
+                {deadline.title}
+              </h3>
+              <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">
+                {deadline.channel_name}
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+              {deadline.description}
+            </p>
+            <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
+              <p className="flex items-center">
+                <ClockIcon className="h-4 w-4 mr-1 text-indigo-400" />
+                {deadline.date_str}
+              </p>
+              <p className="italic">From {deadline.guild_name}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+
+  {/* Academic Deadlines Section */}
+  <section>
+    <div className="flex items-center gap-2 border-b pb-2">
+      <AcademicCapIcon className="h-6 w-6 text-indigo-500" />
+      <h2 className="text-xl font-bold text-gray-800">
+        Academic / Internship / Hiring Opportunities
+      </h2>
+    </div>
+
+    {academicEvents.length === 0 ? (
+      <div className="mt-4 text-gray-500 italic text-sm">No opportunities currently</div>
+    ) : (
+      <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {academicEvents.map((deadline) => (
+          <li
+            key={deadline.id}
+            className="relative rounded-lxg border bg-white p-5 shadow-sm transition hover:shadow-md"
+          >
+            <div className="flex justify-between items-start">
+              <h3 className="text-base font-semibold text-gray-800">
+                {deadline.title}
+              </h3>
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                {deadline.channel_name}
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+              {deadline.description}
+            </p>
+            <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
+              <p className="flex items-center">
+                <ClockIcon className="h-4 w-4 mr-1 text-indigo-400" />
+                {deadline.date_str}
+              </p>
+              <p className="italic">From {deadline.guild_name}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+</div>
+</div>
   );
 };
 

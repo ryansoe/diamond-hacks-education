@@ -10,6 +10,17 @@
   100% { -webkit-transform: rotate(360deg); }
 }
 
+.bg-cream {
+  background-color: #FAF3DD;
+}
+
+.bg-bluee{
+  background-color: #82B2C0;
+}
+
+.bg-other{
+  background-color: #F2EAE0;
+}
 @keyframes spinner {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
