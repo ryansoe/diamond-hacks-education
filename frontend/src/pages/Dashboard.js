@@ -72,7 +72,7 @@ const Dashboard = () => {
               type="text"
               name="search"
               id="search"
-              className="focus:ring-primary-500 focus:border-primary-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300"
+              className="rounded-full px-4 py-2 border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition w-60"
               placeholder="Search deadlines"
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
@@ -140,7 +140,7 @@ const Dashboard = () => {
         {academicEvents.map((deadline) => (
           <li
             key={deadline.id}
-            className="relative rounded-lxg border bg-white p-5 shadow-sm transition hover:shadow-md"
+            className="relative rounded-lg border bg-white p-5 shadow-sm transition hover:shadow-md"
           >
             <div className="flex justify-between items-start">
               <h3 className="text-base font-semibold text-gray-800">

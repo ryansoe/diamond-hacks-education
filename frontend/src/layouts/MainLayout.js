@@ -9,6 +9,7 @@ import {
   Cog6ToothIcon,
   UserIcon
 } from '@heroicons/react/24/outline';
+import logo from './logo.png';
 
 const MainLayout = () => {
   const { user } = useAuth();
@@ -57,8 +58,8 @@ const MainLayout = () => {
                   className={({ isActive }) =>
                     `${
                       isActive
-                        ? 'bg-primary-800 text-white'
-                        : 'text-primary-100 hover:bg-primary-600'
+                        ? 'bg-primary-500 text-white'
+                        : 'text-primary-100 hover:bg-primary-300'
                     } group flex items-center px-2 py-2 text-base font-medium rounded-md`
                   }
                 >
@@ -79,7 +80,8 @@ const MainLayout = () => {
         <div className="flex flex-col w-64">
           <div className="flex flex-col h-0 flex-1">
             <div className="bg-bluee flex items-center h-16 flex-shrink-0 px-4 ">
-              <h1 className="text-white text-xl font-bold" >Discord Task Tracker</h1>
+              <img src = {logo} width="40" height="40"/>
+              <h1 className="text-white text-xl font-bold ml-2" >Eventory</h1>
             </div>
             <div className="flex-1 flex flex-col overflow-y-auto">
               <nav className="bg-bluee flex-1 px-2 py-4 space-y-1">
@@ -91,7 +93,7 @@ const MainLayout = () => {
                       `${
                         isActive
                           ? 'bg-primary-500 text-white'
-                          : 'text-primary-100 hover:bg-primary-400' 
+                          : 'text-primary-100 hover:bg-primary-300' 
                       } group flex items-center px-2 py-2 text-sm font-medium rounded-md`
                     }
                   >
