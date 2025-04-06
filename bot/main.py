@@ -148,40 +148,32 @@ async def process_message_for_deadlines(message):
         
         logger.info(f"Detected {category}: {title} on {date_str}")
         
-        # Always save to the backend API first, as it has proper date formatting
-        api_success = False
         try:
-            api_success = send_deadline_to_api(event_data)
-            if not api_success:
-                logger.warning("API storage failed, will try saving to local MongoDB instead")
-        except Exception as api_error:
-            logger.error(f"Failed to send to API independently: {api_error}")
+            # Save directly to MongoDB only
+            db_result = db_client.save_deadline(event_data)
             
-        # Only save to local MongoDB if the date is properly formatted in YYYY-MM-DD
-        # or if the API storage failed
-        if not api_success:
-            try:
-                # Save to database
-                db_result = db_client.save_deadline(event_data)
+            if db_result:
+                logger.info(f"Successfully saved event to MongoDB with ID: {db_result}")
                 
-                if db_result:
-                    logger.info(f"Successfully saved event to local MongoDB")
+                # Check if date is properly formatted as YYYY-MM-DD
+                if re.match(r'^\d{4}-\d{2}-\d{2}$', date_str):
+                    # Reply to the message if event was detected and saved
+                    if category == 'deadline':
+                        reply_msg = f"✅ I've tracked this deadline: **{title}** due on **{date_str}**"
+                    else:
+                        reply_msg = f"✅ I've tracked this {category}: **{title}** on **{date_str}**"
+                        
+                    await message.reply(reply_msg)
                 else:
-                    logger.warning(f"Skipped saving to MongoDB (likely due to date format or duplicate)")
-                
-            except Exception as db_error:
-                logger.error(f"Failed to save to MongoDB: {db_error}")
-                # Notify the user there was an issue
-                await message.reply(f"⚠️ Detected {category}: **{title}** on **{date_str}**, but couldn't save it (MongoDB connection issue)")
-                return
-        
-        # Reply to the message if event was detected and saved
-        if category == 'deadline':
-            reply_msg = f"✅ I've tracked this deadline: **{title}** due on **{date_str}**"
-        else:
-            reply_msg = f"✅ I've tracked this {category}: **{title}** on **{date_str}**"
+                    logger.info(f"Not sending confirmation reply for non-standard date format: {date_str}")
+            else:
+                logger.warning(f"Skipped saving to MongoDB (likely due to date format or duplicate)")
+                # Don't reply as the event wasn't saved
             
-        await message.reply(reply_msg)
+        except Exception as db_error:
+            logger.error(f"Failed to save to MongoDB: {db_error}")
+            # Notify the user there was an issue
+            await message.reply(f"⚠️ Detected {category}: **{title}**, but couldn't save it (MongoDB connection issue)")
     else:
         logger.info("No event detected in message")
 
