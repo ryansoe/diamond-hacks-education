@@ -61,8 +61,8 @@ const Dashboard = () => {
     );    
 
   return (
-    <div className="container mx-auto px-4">
-      <div className="pb-5 border-b border-gray-200 sm:flex sm:items-center sm:justify-between">
+    <div className="container mx-auto px-4 bg-white rounded-3xl mt-10">
+      <div className="pb-5 border-b bg-white rounded-2xl sm:flex sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold leading-tight text-gray-900">
           Upcoming Tasks
         </h2>
@@ -140,7 +140,7 @@ const Dashboard = () => {
         {academicEvents.map((deadline) => (
           <li
             key={deadline.id}
-            className="relative rounded-lxg border bg-white p-5 shadow-sm transition hover:shadow-md"
+            className="relative rounded-lxg border bg-white p-5 shadow-sm transition hover:shadow-md rounded-lg"
           >
             <div className="flex justify-between items-start">
               <h3 className="text-base font-semibold text-gray-800">
