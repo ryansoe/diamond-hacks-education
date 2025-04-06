@@ -81,7 +81,7 @@ const Dashboard = () => {
         </div>
       </div>
       
-      <div className="space-y-10 px-4 py-6 sm:px-8 ">
+      <div className="space-y-10 px-4 py-6 sm:px-8 bg-white rounded-2xl">
         {/* Club Events Section */}
   <section>
     <div className="flex items-center gap-2 border-b pb-2">
