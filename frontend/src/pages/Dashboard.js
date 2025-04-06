@@ -9,9 +9,11 @@ import {
 } from "@heroicons/react/24/outline";
 
 
+
 const Dashboard = () => {
   const [deadlines, setDeadlines] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDeadline, setSelectedDeadline] = useState(null);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     search: '',
@@ -53,18 +55,22 @@ const Dashboard = () => {
   
 
     const clubEvents = filteredDeadlines.filter(d =>
-      /meeting|club|event|food/i.test(d.title)
+      /meeting|club|event|social|ACM|food/i.test(d.title)
     );
     
     const academicEvents = filteredDeadlines.filter(d =>
-      /internship|hiring|job|scholarship/i.test(d.title)
+      /internship|hiring|job|academic|scholarship/i.test(d.title)
     );    
-
+    
+    const otherEvents = filteredDeadlines.filter(d =>
+      !clubEvents.includes(d) && !academicEvents.includes(d)
+    );
+    
   return (
     <div className="container mx-auto px-4">
       <div className="pb-5 border-b border-gray-200 sm:flex sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold leading-tight text-gray-900">
-          Upcoming Tasks
+          All Events & Announcements
         </h2>
         <div className="mt-3 sm:mt-0 sm:ml-4">
           <div className="flex rounded-md shadow-sm">
@@ -98,7 +104,8 @@ const Dashboard = () => {
         {clubEvents.map((deadline) => (
           <li
             key={deadline.id}
-            className="relative rounded-lg border bg-white p-5 shadow-sm transition hover:shadow-md"
+            onClick={() => setSelectedDeadline(deadline)}
+            className="cursor-pointer relative rounded-lg border bg-white p-5 shadow-sm transition hover:shadow-md"
           >
             <div className="flex justify-between items-start">
               <h3 className="text-base font-semibold text-gray-800">
@@ -140,7 +147,8 @@ const Dashboard = () => {
         {academicEvents.map((deadline) => (
           <li
             key={deadline.id}
-            className="relative rounded-lg border bg-white p-5 shadow-sm transition hover:shadow-md"
+            onClick={() => setSelectedDeadline(deadline)}
+            className="cursor-pointer relative rounded-lg border bg-white p-5 shadow-sm transition hover:shadow-md"
           >
             <div className="flex justify-between items-start">
               <h3 className="text-base font-semibold text-gray-800">
@@ -165,6 +173,71 @@ const Dashboard = () => {
       </ul>
     )}
   </section>
+  {/* Other Events Section */}
+<section>
+  <div className="flex items-center gap-2 border-b pb-2">
+    <ExclamationCircleIcon className="h-6 w-6 text-indigo-500" />
+    <h2 className="text-xl font-bold text-gray-800">
+      Other Announcements
+    </h2>
+  </div>
+
+  {otherEvents.length === 0 ? (
+    <div className="mt-4 text-gray-500 italic text-sm">No announcements currently</div>
+  ) : (
+    <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {otherEvents.map((deadline) => (
+        <li
+          key={deadline.id}
+          onClick={() => setSelectedDeadline(deadline)}
+          className="cursor-pointer relative rounded-lg border bg-white p-5 shadow-sm transition hover:shadow-md"
+        >
+          <div className="flex justify-between items-start">
+            <h3 className="text-base font-semibold text-gray-800">
+              {deadline.title}
+            </h3>
+            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
+              {deadline.channel_name}
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+            {deadline.description}
+          </p>
+          <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
+            <p className="flex items-center">
+              <ClockIcon className="h-4 w-4 mr-1 text-indigo-400" />
+              {deadline.date_str}
+            </p>
+            <p className="italic">From {deadline.guild_name}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  )}
+</section>
+  {selectedDeadline && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+      <button
+        className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+        onClick={() => setSelectedDeadline(null)}
+      >
+        ✕ 
+      </button>
+      <h3 className="text-lg font-semibold text-gray-900">{selectedDeadline.title}</h3>
+      <p className="text-sm text-gray-600 mt-2 mb-4">{selectedDeadline.description}</p>
+      <div className="text-sm text-gray-500">
+        <p><strong>Server:</strong> {selectedDeadline.guild_name}</p>
+        <p><strong>Channel:</strong> {selectedDeadline.channel_name}</p>
+        <p><strong>Message:</strong> {selectedDeadline.raw_content}</p>
+        <p className="flex items-center mt-1">
+          <ClockIcon className="h-4 w-4 mr-1 text-indigo-400" />
+          {selectedDeadline.date_str}
+        </p>
+      </div>
+    </div>
+  </div>
+)}
 </div>
 </div>
   );

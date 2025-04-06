@@ -46,7 +46,7 @@ const MainLayout = () => {
           </div>
           
           <div className="flex-shrink-0 flex items-center px-4">
-            <h1 className="text-white text-xl font-bold">Discord Task Tracker</h1>
+            <h1 className="text-white text-xl font-bold">Eventory</h1>
           </div>
           
           <div className="mt-5 flex-1 h-0 overflow-y-auto">
