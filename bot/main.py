@@ -132,6 +132,12 @@ async def process_message_for_deadlines(message):
         "link": message.jump_url,
     }
     
+    # First check if we've already processed this message (to prevent duplicate processing)
+    existing_event = db_client.check_exists_by_message_id(message_info["message_id"])
+    if existing_event:
+        logger.info(f"Skipping already processed message with ID: {message_info['message_id']}")
+        return
+    
     # Try to extract event with Gemini AI (with fallback to regex if needed)
     event_found, event_data = extract_deadline_with_fallback(content, message_info)
     
@@ -142,29 +148,40 @@ async def process_message_for_deadlines(message):
         
         logger.info(f"Detected {category}: {title} on {date_str}")
         
+        # Always save to the backend API first, as it has proper date formatting
+        api_success = False
         try:
-            # Save to database
-            db_client.save_deadline(event_data)
-            logger.info(f"Successfully saved event to local MongoDB")
-            
-            # Reply to the message if event was detected and saved
-            if category == 'deadline':
-                reply_msg = f"✅ I've tracked this deadline: **{title}** due on **{date_str}**"
-            else:
-                reply_msg = f"✅ I've tracked this {category}: **{title}** on **{date_str}**"
-                
-            await message.reply(reply_msg)
-            
-        except Exception as db_error:
-            logger.error(f"Failed to save to MongoDB: {db_error}")
-            # Notify the user there was an issue
-            await message.reply(f"⚠️ Detected {category}: **{title}** on **{date_str}**, but couldn't save it (MongoDB connection issue)")
-        
-        # Try to send to backend API
-        try:
-            send_deadline_to_api(event_data)
+            api_success = send_deadline_to_api(event_data)
+            if not api_success:
+                logger.warning("API storage failed, will try saving to local MongoDB instead")
         except Exception as api_error:
             logger.error(f"Failed to send to API independently: {api_error}")
+            
+        # Only save to local MongoDB if the date is properly formatted in YYYY-MM-DD
+        # or if the API storage failed
+        if not api_success:
+            try:
+                # Save to database
+                db_result = db_client.save_deadline(event_data)
+                
+                if db_result:
+                    logger.info(f"Successfully saved event to local MongoDB")
+                else:
+                    logger.warning(f"Skipped saving to MongoDB (likely due to date format or duplicate)")
+                
+            except Exception as db_error:
+                logger.error(f"Failed to save to MongoDB: {db_error}")
+                # Notify the user there was an issue
+                await message.reply(f"⚠️ Detected {category}: **{title}** on **{date_str}**, but couldn't save it (MongoDB connection issue)")
+                return
+        
+        # Reply to the message if event was detected and saved
+        if category == 'deadline':
+            reply_msg = f"✅ I've tracked this deadline: **{title}** due on **{date_str}**"
+        else:
+            reply_msg = f"✅ I've tracked this {category}: **{title}** on **{date_str}**"
+            
+        await message.reply(reply_msg)
     else:
         logger.info("No event detected in message")
 
@@ -210,12 +227,16 @@ def parse_date_string(date_str):
 
 
 def send_deadline_to_api(event_data):
-    """Send event data to the backend API"""
+    """Send event data to the backend API
+    
+    Returns:
+        bool: True if the event was successfully sent to the API, False otherwise
+    """
     try:
         # Verify we have an API key and URL
         if not BOT_API_KEY or BOT_API_KEY == "your_bot_api_key_here":
             logger.error("Missing or default BOT_API_KEY - cannot send to API. Check your .env file.")
-            return
+            return False
             
         # Create API-compatible data structure
         api_data = {
@@ -229,8 +250,10 @@ def send_deadline_to_api(event_data):
             "time": event_data.get("time", ""),
             "category": event_data.get("category", "event"),
             "source": event_data.get("source", "discord_bot"),
-            # Ensure message_id is always included
-            "message_id": event_data.get("message_id", f"msg_{int(time.time())}")
+            # Ensure message_id is always included and passed to API for deduplication
+            "message_id": event_data.get("message_id", f"msg_{int(time.time())}"),
+            # Always include the standardized date format
+            "date_str": event_data.get("date_str", "")
         }
         
         # Include API key for authorization
@@ -253,17 +276,21 @@ def send_deadline_to_api(event_data):
         # Check response
         if response.status_code == 201:
             logger.info(f"Successfully sent event to API: {response.json()}")
+            return True
         elif response.status_code == 401:
             logger.error(f"API Key rejected (401): {response.text}")
             logger.error(f"Please check that BOT_API_KEY matches between bot and backend .env files")
         else:
             logger.error(f"Failed to send event to API: {response.status_code} - {response.text}")
+            return False
             
     except requests.RequestException as re:
         logger.error(f"Network error sending event to API: {re}")
         logger.error(f"Please check that the backend API is running at {API_URL}")
+        return False
     except Exception as e:
         logger.error(f"Error sending event to API: {e}")
+        return False
 
 
 @bot.command(name='deadlines')
