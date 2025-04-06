@@ -43,6 +43,7 @@ const Calendar = () => {
   const getDayDeadlines = (day) => {
     return deadlines.filter(deadline => {
       const deadlineDate = new Date(deadline.timestamp);
+      // console.log("timestamp: ", deadline.timestamp);
       return deadlineDate.getDate() === day.getDate() &&
              deadlineDate.getMonth() === day.getMonth() &&
              deadlineDate.getFullYear() === day.getFullYear();
@@ -53,7 +54,7 @@ const Calendar = () => {
     <div className="container mx-auto px-4">
       <div className="pb-5 border-b border-gray-200 sm:flex sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold leading-tight text-gray-900">
-          Deadline Calendar
+          Task Calendar
         </h2>
         <div className="mt-3 sm:mt-0 sm:ml-4">
           <div className="flex items-center space-x-4">
@@ -134,10 +135,6 @@ const Calendar = () => {
           </div>
         </div>
       )}
-      
-      <div className="mt-8 text-center text-gray-500 text-sm">
-        <p>Calendar view is a placeholder. Your team will implement the full functionality.</p>
-      </div>
     </div>
   );
 };
