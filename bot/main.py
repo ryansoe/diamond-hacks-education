@@ -77,7 +77,7 @@ async def on_ready():
         logger.info(f'Connected to {guild.name} (id: {guild.id})')
     
     general_channel = bot.get_channel(1358156201208315958)
-    await general_channel.send("bot just started")
+    #await general_channel.send("bot just started")
 
 
 @bot.event
@@ -96,7 +96,8 @@ async def on_message(message):
             # Get the general channel - if not found, log an error but don't crash
             general_channel = bot.get_channel(1358156201208315958)
             if general_channel:
-                await general_channel.send(f"{message.content}\n\n## This message came from {message.guild.name}")
+                pass
+                #await general_channel.send(f"{message.content}\n\n## This message came from {message.guild.name}")
             else:
                 logger.error(f"Could not find general channel with ID 1358156201208315958")
         except Exception as e:
