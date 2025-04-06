@@ -170,10 +170,6 @@ Eventory can detect various types of announcements:
 3. Make your changes
 4. Submit a pull request
 
-## License
-
-This project is licensed under the MIT License.
-
 ## Acknowledgements
 
 - Google Gemini for the AI capabilities
