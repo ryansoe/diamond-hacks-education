@@ -1,38 +1,86 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import api from '../services/api';
+import api, { apiService } from '../services/api';
 
 // Create auth context
 const AuthContext = createContext();
 
 // Auth provider component
 export const AuthProvider = ({ children }) => {
-  // Default user state - automatically authenticated
-  const [user, setUser] = useState({ username: 'Guest User' });
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // Auto-authenticated
+  // State for user and authentication
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(false); // No loading since we're auto-authenticating
+  const [loading, setLoading] = useState(true);
   
-  // Set up API default headers
+  // Check if user is already authenticated on mount
   useEffect(() => {
-    // For API calls, we'll use a default token for now
-    // In a real app, you would implement proper authentication
-    const defaultToken = 'guest-access-token';
-    api.defaults.headers.common['Authorization'] = `Bearer ${defaultToken}`;
+    const checkAuthStatus = async () => {
+      const token = localStorage.getItem('auth_token');
+      
+      if (token) {
+        try {
+          // Set default authorization header
+          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          
+          // Option 1: Try to fetch user profile from an endpoint (if available)
+          // const response = await api.get('/me');
+          // setUser(response.data);
+          
+          // Option 2: For demo, use the token to set basic user info
+          // In production, you would use Option 1 to get real user data
+          setUser({ username: 'Guest User' });
+          setIsAuthenticated(true);
+          setIsAdmin(false); // Set based on user role from backend
+        } catch (error) {
+          console.error('Auth verification failed:', error);
+          localStorage.removeItem('auth_token');
+          setUser(null);
+          setIsAuthenticated(false);
+          setIsAdmin(false);
+        }
+      } else {
+        // Set guest credentials for demo purposes
+        setUser({ username: 'Guest User' });
+        setIsAuthenticated(true); // Auto-authenticate for demo
+      }
+      
+      setLoading(false);
+    };
+    
+    checkAuthStatus();
   }, []);
   
-  // This login function is kept for future implementation
+  // Login function
   const login = async (username, password) => {
-    // In a real implementation, you'd validate credentials with the backend
-    setUser({ username });
-    setIsAdmin(username === 'admin');
-    return true;
+    try {
+      setLoading(true);
+      const response = await apiService.login({ username, password });
+      
+      if (response.data.access_token) {
+        // Set user after successful login
+        setUser({ username });
+        setIsAuthenticated(true);
+        setIsAdmin(username === 'admin'); // Set admin status based on username or role
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Login failed:', error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
   };
   
-  // This logout function is kept for future implementation
+  // Logout function
   const logout = () => {
-    // In a real implementation, you'd clear auth state
-    setUser({ username: 'Guest User' });
+    apiService.logout();
+    setUser(null);
+    setIsAuthenticated(false);
     setIsAdmin(false);
+    // For demo purposes, we'll set the guest user automatically
+    setUser({ username: 'Guest User' });
+    setIsAuthenticated(true);
   };
   
   // Context value

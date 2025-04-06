@@ -23,8 +23,8 @@ BOT_API_KEY = os.getenv('BOT_API_KEY', 'your_bot_api_key_here')
 
 # Create FastAPI app
 app = FastAPI(
-    title="School Deadline Tracker API",
-    description="API for accessing and managing school deadlines",
+    title="Eventory API",
+    description="API for accessing and managing events from Discord",
     version="0.1.0"
 )
 
@@ -44,7 +44,39 @@ db_client = MongoDBClient()
 @app.get("/")
 async def root():
     """Root endpoint to check if the API is running"""
-    return {"message": "School Deadline Tracker API is running"}
+    return {"message": "Eventory API is running"}
+
+
+# Add a public endpoint for deadlines that doesn't require authentication
+@app.get("/public/deadlines", response_model=DeadlineList)
+async def get_public_deadlines(
+    skip: int = 0,
+    limit: int = 10,
+):
+    """Get a list of deadlines without authentication
+    
+    Args:
+        skip: Number of records to skip
+        limit: Maximum number of records to return
+    
+    Returns:
+        List of deadlines
+    """
+    deadlines = db_client.get_deadlines(limit=limit, skip=skip)
+    
+    # Convert MongoDB documents to API models
+    deadline_list = []
+    for d in deadlines:
+        # Convert MongoDB _id to string
+        d["id"] = str(d.pop("_id"))
+        deadline_list.append(d)
+    
+    return {
+        "deadlines": deadline_list,
+        "total": len(deadline_list),
+        "skip": skip,
+        "limit": limit
+    }
 
 
 @app.get("/deadlines", response_model=DeadlineList)
@@ -78,6 +110,33 @@ async def get_deadlines(
         "skip": skip,
         "limit": limit
     }
+
+
+# Add a public endpoint for a single deadline that doesn't require authentication
+@app.get("/public/deadlines/{deadline_id}", response_model=DeadlineResponse)
+async def get_public_deadline(
+    deadline_id: str,
+):
+    """Get a specific deadline by ID without authentication
+    
+    Args:
+        deadline_id: ID of the deadline to retrieve
+    
+    Returns:
+        Deadline details
+    """
+    deadline = db_client.get_deadline_by_id(deadline_id)
+    
+    if not deadline:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Deadline not found"
+        )
+    
+    # Convert MongoDB _id to string
+    deadline["id"] = str(deadline.pop("_id"))
+    
+    return deadline
 
 
 @app.get("/deadlines/{deadline_id}", response_model=DeadlineResponse)
@@ -163,6 +222,19 @@ async def login_for_access_token(user: UserLogin):
         )
     
     access_token = create_access_token(data={"sub": user.username})
+    
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+# Endpoint to get a guest token for demo purposes
+@app.get("/guest-token", response_model=Token)
+async def get_guest_token():
+    """Get a guest access token for demo purposes
+    
+    Returns:
+        JWT access token for guest access
+    """
+    access_token = create_access_token(data={"sub": "guest"})
     
     return {"access_token": access_token, "token_type": "bearer"}
 

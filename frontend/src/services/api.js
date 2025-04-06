@@ -5,10 +5,52 @@ const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000',
   headers: {
     'Content-Type': 'application/json',
-    // Use a default token for demo purposes
-    'Authorization': 'Bearer guest-access-token'
   },
 });
+
+// Add a request interceptor to add the token to requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      // Use a default token for demo purposes when not logged in
+      config.headers['Authorization'] = 'Bearer guest-access-token';
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add a response interceptor to handle errors globally
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      if (error.response.status === 401) {
+        console.log('Unauthorized - Redirecting to login');
+        // In a real app, you might want to redirect to login
+        // or refresh the token
+        localStorage.removeItem('auth_token');
+      }
+      console.error('API Error:', error.response.data);
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('Network Error:', error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error('Error:', error.message);
+    }
+    return Promise.reject(error);
+  }
+);
 
 const formatDateString = (dateStr) => {
   // Remove ordinal suffixes like "st", "nd", "rd", "th"
@@ -26,43 +68,63 @@ const formatDateString = (dateStr) => {
   return `${year}-${month}-${day}`;
 };
 
+// Attempt to fetch a guest token on initialization
+const fetchGuestToken = async () => {
+  try {
+    const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/guest-token`);
+    if (response.data && response.data.access_token) {
+      localStorage.setItem('auth_token', response.data.access_token);
+      return response.data.access_token;
+    }
+  } catch (error) {
+    console.warn('Could not fetch guest token, falling back to public endpoints', error);
+  }
+  return null;
+};
 
-// API service methods with mock data for the template
+// Initialize guest token
+fetchGuestToken();
+
+// API service methods
 const apiService = {
   // Deadlines
   getDeadlines: async (params) => {
-    // Try to get from API, but fall back to mock data
     try {
-      return await api.get('/deadlines', { params });
+      // Try the public endpoint first - no authentication required
+      const response = await api.get('/public/deadlines', { params });
+      return response;
     } catch (error) {
       console.log('Using mock data due to API error:', error);
-      // Return mock data
+      // Return mock data as fallback (useful for development without backend)
       return {
         data: {
           deadlines: [
             {
               id: '1',
-              title: 'software engineering internship oppurtunity',
+              title: 'software engineering internship opportunity',
               date_str: 'April 15th, 2025',
               channel_name: 'math-101',
               guild_name: 'School Server',
               timestamp: formatDateString('April 15th, 2025'),
+              description: 'Software engineering internship for summer 2025',
             },
             {
               id: '2',
               title: 'ACM Projects meeting',
               date_str: 'April 10th, 2025',
-              channel_name: 'physics-202',
-              guild_name: 'School Server',
+              channel_name: 'announcements',
+              guild_name: 'ACM Club',
               timestamp: formatDateString('April 29th, 2025'),
+              description: 'Weekly ACM projects meeting - all welcome!',
             },
             {
               id: '3',
-              title: 'scholarship oppurtunity',
+              title: 'scholarship opportunity',
               date_str: 'April 20th, 2025',
               channel_name: 'english-comp',
               guild_name: 'School Server',
               timestamp: formatDateString('April 20th, 2025'),
+              description: 'Scholarship application deadline approaching',
             },
             {
               id: '4',
@@ -71,17 +133,19 @@ const apiService = {
               channel_name: 'announcements',
               guild_name: 'ACM UCSD',
               timestamp: formatDateString('May 2nd, 2025'),
+              description: 'General body meeting with free pizza!',
             },
             {
               id: '5',
-              title: 'Nursing Internship ',
+              title: 'Nursing Internship',
               date_str: 'May 2nd, 2025',
               channel_name: 'announcements',
-              guild_name: 'ACM UCSD',
+              guild_name: 'Nursing Department',
               timestamp: formatDateString('May 2nd, 2025'),
+              description: 'Summer nursing internship opportunity',
             },
           ],
-          total: 3,
+          total: 5,
           skip: 0,
           limit: 10
         }
@@ -90,30 +154,53 @@ const apiService = {
   },
   
   getDeadline: async (id) => {
-    // Try to get from API, but fall back to mock data
     try {
-      return await api.get(`/deadlines/${id}`);
+      // Try the public endpoint first - no authentication required
+      const response = await api.get(`/public/deadlines/${id}`);
+      return response;
     } catch (error) {
       console.log('Using mock data due to API error:', error);
-      // Return mock data for the specific ID
+      // Return mock data for the specific ID as fallback
       return {
         data: {
           id, 
-          title: 'Math Assignment #3',
-          date_str: 'December 15th, 2023',
-          raw_content: 'Don\'t forget the Math Assignment #3 is due on December 15th. It covers chapters 7-9 and includes all practice problems at the end of each chapter.',
-          channel_name: 'math-101',
-          guild_name: 'School Server',
-          author_name: 'Professor Smith',
+          title: 'Eventory Demo Event',
+          date_str: 'April 15th, 2025',
+          raw_content: 'This is a sample event from the mock data. In production, this would be real data from the API.',
+          channel_name: 'announcements',
+          guild_name: 'Eventory Server',
+          author_name: 'Eventory Bot',
           timestamp: new Date().toISOString(),
           source_link: 'https://discord.com/channels/123456789/123456789/123456789',
+          description: 'Sample event description with details about location, time, and more.',
         }
       };
     }
   },
   
-  // Auth (kept for future implementation)
-  login: (credentials) => api.post('/token', credentials),
+  // Auth
+  login: async (credentials) => {
+    try {
+      const response = await api.post('/token', credentials);
+      // Store token in localStorage for use in future requests
+      if (response.data && response.data.access_token) {
+        localStorage.setItem('auth_token', response.data.access_token);
+      }
+      return response;
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
+  },
+
+  logout: () => {
+    localStorage.removeItem('auth_token');
+  },
+
+  // Check if user is authenticated
+  isAuthenticated: () => {
+    return !!localStorage.getItem('auth_token');
+  }
 };
 
 export default api;
