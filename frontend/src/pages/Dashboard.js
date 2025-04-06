@@ -61,7 +61,7 @@ const Dashboard = () => {
     );    
 
   return (
-    <div className="container mx-auto px-4 bg-white rounded-3xl mt-10">
+    <div className="container mx-auto px-4 bg-white rounded-3xl">
       <div className="pb-5 border-b bg-white rounded-2xl sm:flex sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold leading-tight text-gray-900">
           Upcoming Tasks
@@ -72,7 +72,7 @@ const Dashboard = () => {
               type="text"
               name="search"
               id="search"
-              className="focus:ring-primary-500 focus:border-primary-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300"
+              className="rounded-full px-4 py-2 border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition w-60"
               placeholder="Search deadlines"
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
@@ -140,7 +140,11 @@ const Dashboard = () => {
         {academicEvents.map((deadline) => (
           <li
             key={deadline.id}
+ HEAD
             className="relative rounded-lxg border bg-white p-5 shadow-sm transition hover:shadow-md rounded-lg"
+
+            className="relative rounded-lg border bg-white p-5 shadow-sm transition hover:shadow-md"
+f1bf33084fe88fb34fbdc5dc8f5cf4917d2ab3d3
           >
             <div className="flex justify-between items-start">
               <h3 className="text-base font-semibold text-gray-800">
